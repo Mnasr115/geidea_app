@@ -28,7 +28,7 @@ class PaymentScreen extends StatelessWidget {
 
     // Set up checkout options
     CheckoutOptions checkoutOptions = CheckoutOptions(
-      "123.45" as double,
+      123.45,
       "SAR",
       callbackUrl: "https://website.hook/", 
       returnUrl: "https://returnurl.com", 
