@@ -1,97 +1,51 @@
-//  import 'package:flutter/material.dart';
-// import 'package:geideapay/api/response/order_api_response.dart';
-// import 'package:geideapay/common/geidea.dart';
-// import 'package:geideapay/models/address.dart';
-// import 'package:geideapay/widgets/checkout/checkout_options.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:geidea_app/business_logic/payment/payment_cubit.dart';
+import 'package:geidea_app/business_logic/payment/payment_state.dart';
 
-// class PaymentScreen extends StatelessWidget {
-//   final GeideapayPlugin _plugin = GeideapayPlugin();
+class PaymentMethodsScreen extends StatelessWidget {
+  const PaymentMethodsScreen({super.key});
 
-//   PaymentScreen({super.key});
-
-//   @override
-//   Widget build(BuildContext context) {
-//     // Define billing and shipping address details
-//     Address billingAddress = Address(
-//       city: "Riyadh",
-//       countryCode: "SAU",
-//       street: "Street 1",
-//       postCode: "1000",
-//     );
-
-//     Address shippingAddress = Address(
-//       city: "Riyadh",
-//       countryCode: "SAU",
-//       street: "Street 1",
-//       postCode: "1000",
-//     );
-
-//     // Set up checkout options
-//     CheckoutOptions checkoutOptions = CheckoutOptions(
-//       123.45,
-//       "SAR",
-//       callbackUrl: "https://website.hook/", 
-//       returnUrl: "https://returnurl.com", 
-//       lang: "AR",
-//       billingAddress: billingAddress, 
-//       shippingAddress: shippingAddress, 
-//       customerEmail: "email@noreply.test", 
-//       merchantReferenceID: "1234", 
-//       paymentOperation: "Pay", 
-//       showAddress: true, 
-//       showEmail: true, 
-//       textColor: const Color(0xffffffff), 
-//       cardColor: const Color(0xffff4d00), 
-//       payButtonColor: const Color(0xffff4d00), 
-//       cancelButtonColor: const Color(0xff878787),
-//       backgroundColor: const Color(0xff2c2222),
-//     );
-
-//     return Scaffold(
-//       appBar: AppBar(title: const Text('Payment Screen')),
-//       body: Center(
-//         child: ElevatedButton(
-//           onPressed: () async {
-//             try {
-//               OrderApiResponse response = await _plugin.checkout(
-//                   context: context, checkoutOptions: checkoutOptions);
-
-//               debugPrint('Response = $response');
-//               // Handle successful payment response
-//               _updateStatus(
-//                   response.detailedResponseMessage!, response.toString());
-//             } catch (e) {
-//               debugPrint("Error: $e");
-//               _showMessage(context,e.toString());
-//             }
-//           },
-//           child: const Text('Proceed to Checkout'),
-//         ),
-//       ),
-//     );
-//   }
-
-//   void _updateStatus(String status, String responseMessage) {
-//     // Update UI with response status
-//     debugPrint("Status: $status");
-//     debugPrint("Response: $responseMessage");
-//   }
-
-//   void _showMessage(BuildContext context, String message) {
-//     showDialog(
-//       context: context,
-//       builder: (BuildContext context) {
-//         return AlertDialog(
-//           title: const Text('Error'),
-//           content: Text(message),
-//           actions: <Widget>[
-//             TextButton(
-//               onPressed: () => Navigator.of(context).pop(),
-//               child: const Text('OK'),
-//             ),
-//           ],
-//         );
-//       },
-//     );
-//   }
-// }
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Payment Methods')),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: BlocBuilder<PaymentMethodCubit, PaymentMethodState>(
+          builder: (context, state) {
+            if (state is PaymentMethodLoading) {
+              return const Center(child: CircularProgressIndicator());
+            } else if (state is PaymentMethodError) {
+              return Center(
+                child: Text(state.message, style: const TextStyle(color: Colors.red)),
+              );
+            } else if (state is PaymentMethodLoaded) {
+              return ListView.builder(
+                itemCount: state.paymentMethods.length,
+                itemBuilder: (context, index) {
+                  final method = state.paymentMethods[index];
+                  return Card(
+                    child: ListTile(
+                      leading: Image.network(
+                        method['logo'],
+                        width: 50,
+                        height: 50,
+                        errorBuilder: (context, error, stackTrace) =>
+                            const Icon(Icons.image_not_supported),
+                      ),
+                      title: Text(method['name_en']),
+                      subtitle: Text(method['name_ar']),
+                    ),
+                  );
+                },
+              );
+            } else {
+              return const SizedBox();
+            }
+          },
+        ),
+      ),
+    );
+  }
+}

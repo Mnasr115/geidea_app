@@ -33,4 +33,46 @@ class PaymentMethodRepository {
       throw Exception('Error occurred while fetching payment methods: $error');
     }
   }
+
+  Future<dynamic> initiatePayment({
+    required int paymentMethodId,
+    required double amount,
+    required String currency,
+    required Map<String, dynamic> customerData,
+    required Map<String, String> redirectionUrls,
+  }) async {
+    final Uri url = Uri.parse('$_baseUrl/invoiceInitPay');
+    final headers = {
+      'Authorization': 'Bearer $_accessToken',
+      'Content-Type': 'application/json',
+    };
+
+    final requestData = {
+      'payment_method_id': paymentMethodId,
+      'cartTotal': amount.toString(),
+      'currency': currency,
+      'customer': customerData,
+      'redirectionUrls': redirectionUrls,
+      'cartItems': [
+        {'name': 'Product Name', 'price': amount.toString(), 'quantity': '1'},
+      ],
+    };
+
+    try {
+      final response = await http.post(url,
+          headers: headers, body: json.encode(requestData));
+      if (response.statusCode == 200) {
+        final responseData = json.decode(response.body);
+        if (responseData['status'] == 'success') {
+          return responseData['data'];
+        } else {
+          throw Exception('Payment failed: ${responseData['message']}');
+        }
+      } else {
+        throw Exception('Payment failed. Status Code: ${response.statusCode}');
+      }
+    } catch (error) {
+      throw Exception('Error occurred while initiating payment: $error');
+    }
+  }
 }

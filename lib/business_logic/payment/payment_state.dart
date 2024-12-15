@@ -13,3 +13,13 @@ class PaymentMethodError extends PaymentMethodState {
   final String message;
   PaymentMethodError(this.message);
 }
+class PaymentInitiated extends PaymentMethodState {
+  final String redirectUrl;
+  PaymentInitiated(this.redirectUrl);
+}
+
+class PaymentInitiatedFawry extends PaymentMethodState {
+  final String fawryCode;
+  final String expireDate;
+  PaymentInitiatedFawry({required this.fawryCode, required this.expireDate});
+}

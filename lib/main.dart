@@ -8,6 +8,7 @@ import 'package:geideapay/common/geidea.dart';
 import 'package:geideapay/common/server_environments.dart';
 import 'package:geideapay/models/address.dart';
 import 'package:geideapay/widgets/checkout/checkout_options.dart';
+import 'package:webview_flutter/webview_flutter.dart';
 
 void main() {
   runApp(const MyApp());
@@ -15,7 +16,7 @@ void main() {
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
-  
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -31,18 +32,47 @@ class MyApp extends StatelessWidget {
 
 class PaymentScreen extends StatefulWidget {
   const PaymentScreen({super.key});
-  
+
   @override
   State<PaymentScreen> createState() => _PaymentScreenState();
 }
 
 class _PaymentScreenState extends State<PaymentScreen> {
+  String? selectedPaymentMethod;
   final GeideapayPlugin _plugin = GeideapayPlugin();
+  late final WebViewController _controller;
 
   @override
   void initState() {
     super.initState();
     _initializeGeideaPlugin();
+    _controller = WebViewController()
+      ..setJavaScriptMode(JavaScriptMode.unrestricted)
+      ..setNavigationDelegate(NavigationDelegate(
+        onPageStarted: (url) {
+          // Handle page loading here
+        },
+        onPageFinished: (url) {
+          _handlePaymentResult(url);
+        },
+        onWebResourceError: (error) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Payment Error: ${error.description}')),
+          );
+        },
+      ));
+  }
+
+  void _handlePaymentResult(String url) {
+    if (url.contains('success')) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Payment Successful!')),
+      );
+    } else if (url.contains('fail')) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Payment Failed!')),
+      );
+    }
   }
 
   void _initializeGeideaPlugin() {
@@ -144,7 +174,10 @@ class _PaymentScreenState extends State<PaymentScreen> {
                   if (state is PaymentMethodLoading) {
                     return const CircularProgressIndicator();
                   } else if (state is PaymentMethodError) {
-                    return Text(state.message, style: const TextStyle(color: Colors.red));
+                    return Center(
+                      child: Text(state.message,
+                          style: const TextStyle(color: Colors.red)),
+                    );
                   } else if (state is PaymentMethodLoaded) {
                     return Expanded(
                       child: ListView.builder(
@@ -162,14 +195,91 @@ class _PaymentScreenState extends State<PaymentScreen> {
                               ),
                               title: Text(method['name_en']),
                               subtitle: Text(method['name_ar']),
+                              onTap: () {
+                                setState(() {
+                                  selectedPaymentMethod = method['name_en'];
+                                  final paymentId = method['paymentId'];
+                                  final redirectionUrls = {
+                                    'successUrl':
+                                        'https://yourdomain.com/success',
+                                    'failUrl': 'https://yourdomain.com/fail',
+                                    'pendingUrl':
+                                        'https://yourdomain.com/pending',
+                                  };
+                            
+                                  final customerData = {
+                                    'first_name': 'test',
+                                    'last_name': 'test',
+                                    'email': 'mhmud@gmail.com',
+                                    'phone': '01223643717',
+                                    'address': 'Cairo',
+                                  };
+                            
+                                  BlocProvider.of<PaymentMethodCubit>(context)
+                                      .initiatePayment(
+                                    paymentMethodId: paymentId,
+                                    amount: 150.0,
+                                    currency: 'EGP',
+                                    customerData: customerData,
+                                    redirectionUrls: redirectionUrls,
+                                  );
+                                });
+                              },
                             ),
                           );
                         },
                       ),
                     );
-                  } else {
-                    return const SizedBox();
+                  } else if (state is PaymentInitiated) {
+                    return Expanded(
+                      child: WebViewWidget(
+                          controller: _controller
+                            ..loadRequest(Uri.parse(state.redirectUrl))),
+                    );
+                  } else if (state is PaymentInitiatedFawry) {
+                    return Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          const Text(
+                            'Fawry Payment Details',
+                            style: TextStyle(
+                              fontSize: 20,
+                              color: Color(0xff6BB26B),
+                            ),
+                          ),
+                          const SizedBox(height: 20),
+                          const Text(
+                            'Use the following Fawry code to complete your payment:',
+                            style: TextStyle(
+                              fontSize: 16,
+                              color: Colors.black,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(height: 20),
+                          Text(
+                            state.fawryCode,
+                            style: const TextStyle(
+                              fontSize: 28,
+                              color: Color(0xff6BB26B),
+                            ),
+                          ),
+                          const SizedBox(height: 20),
+                          Text(
+                            'The payment code will expire on: ${state.expireDate}',
+                            style: const TextStyle(
+                              fontSize: 16,
+                              color: Colors.black,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ],
+                      ),
+                    );
                   }
+                  return const SizedBox();
                 },
               ),
             ],
