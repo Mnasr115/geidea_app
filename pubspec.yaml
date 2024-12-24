@@ -15,6 +15,7 @@ dependencies:
   flutter:
     sdk: flutter
   flutter_bloc: ^8.1.6
+  flutter_inappwebview: ^6.1.5
   geideapay:
     git:
       url: https://github.com/GeideaSolutions/Flutter-SDK

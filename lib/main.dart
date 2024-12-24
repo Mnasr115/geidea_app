@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_inappwebview/flutter_inappwebview.dart';
 import 'package:geidea_app/business_logic/payment/payment_cubit.dart';
 import 'package:geidea_app/business_logic/payment/payment_state.dart';
 import 'package:geidea_app/data/payment_repo/payment_repository.dart';
@@ -40,27 +41,27 @@ class PaymentScreen extends StatefulWidget {
 class _PaymentScreenState extends State<PaymentScreen> {
   String? selectedPaymentMethod;
   final GeideapayPlugin _plugin = GeideapayPlugin();
-  late final WebViewController _controller;
+  // late final WebViewController _controller;
 
   @override
   void initState() {
     super.initState();
     _initializeGeideaPlugin();
-    _controller = WebViewController()
-      ..setJavaScriptMode(JavaScriptMode.unrestricted)
-      ..setNavigationDelegate(NavigationDelegate(
-        onPageStarted: (url) {
-          // Handle page loading here
-        },
-        onPageFinished: (url) {
-          _handlePaymentResult(url);
-        },
-        onWebResourceError: (error) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Payment Error: ${error.description}')),
-          );
-        },
-      ));
+    // _controller = WebViewController()
+    //   ..setJavaScriptMode(JavaScriptMode.unrestricted)
+    //   ..setNavigationDelegate(NavigationDelegate(
+    //     onPageStarted: (url) {
+    //       // Handle page loading here
+    //     },
+    //     onPageFinished: (url) {
+    //       _handlePaymentResult(url);
+    //     },
+    //     onWebResourceError: (error) {
+    //       ScaffoldMessenger.of(context).showSnackBar(
+    //         SnackBar(content: Text('Payment Error: ${error.description}')),
+    //       );
+    //     },
+    //   ));
   }
 
   void _handlePaymentResult(String url) {
@@ -99,7 +100,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
     CheckoutOptions checkoutOptions = CheckoutOptions(
       1.00,
       "EGP",
-      callbackUrl: "https://website.hook/",
+      callbackUrl: "https://websiteook/",
       returnUrl: "https://returnurl.com",
       lang: "AR",
       billingAddress: billingAddress,
@@ -206,7 +207,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                                     'pendingUrl':
                                         'https://yourdomain.com/pending',
                                   };
-                            
+
                                   final customerData = {
                                     'first_name': 'test',
                                     'last_name': 'test',
@@ -214,7 +215,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                                     'phone': '01223643717',
                                     'address': 'Cairo',
                                   };
-                            
+
                                   BlocProvider.of<PaymentMethodCubit>(context)
                                       .initiatePayment(
                                     paymentMethodId: paymentId,
@@ -232,9 +233,27 @@ class _PaymentScreenState extends State<PaymentScreen> {
                     );
                   } else if (state is PaymentInitiated) {
                     return Expanded(
-                      child: WebViewWidget(
-                          controller: _controller
-                            ..loadRequest(Uri.parse(state.redirectUrl))),
+                      child: InAppWebView(
+                        initialUrlRequest:
+                            URLRequest(url: WebUri(state.redirectUrl)),
+                        initialSettings: InAppWebViewSettings(
+                          javaScriptEnabled: true,
+                          supportZoom: false,
+                        ),
+                        onWebViewCreated: (controller) {},
+                        onLoadStop: (controller, url) {
+                          _handlePaymentResult(url.toString());
+                        },
+                        onReceivedError: (controller, request, error) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content:
+                                  Text('Payment Error: ${error.description}'),
+                            ),
+                          );
+                          Navigator.pop(context);
+                        },
+                      ),
                     );
                   } else if (state is PaymentInitiatedFawry) {
                     return Padding(
@@ -250,31 +269,73 @@ class _PaymentScreenState extends State<PaymentScreen> {
                             ),
                           ),
                           const SizedBox(height: 20),
-                          const Text(
-                            'Use the following Fawry code to complete your payment:',
-                            style: TextStyle(
-                              fontSize: 16,
-                              color: Colors.black,
+                          Card(
+                            elevation: 6,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
                             ),
-                            textAlign: TextAlign.center,
-                          ),
-                          const SizedBox(height: 20),
-                          Text(
-                            state.fawryCode,
-                            style: const TextStyle(
-                              fontSize: 28,
-                              color: Color(0xff6BB26B),
+                            child: Padding(
+                              padding: const EdgeInsets.all(20),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                children: [
+                                  const Icon(
+                                    Icons.check_circle,
+                                    color: Color(0xff6BB26B),
+                                    size: 48,
+                                  ),
+                                  const SizedBox(height: 20),
+                                  const Text(
+                                    'Use the following Fawry code to complete your payment:',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      color: Colors.black,
+                                    ),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                  const SizedBox(height: 20),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 16,
+                                      vertical: 12,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(12),
+                                      color: const Color(0xff6BB26B)
+                                          .withOpacity(0.1),
+                                    ),
+                                    child: SelectableText(
+                                      state.fawryCode,
+                                      style: const TextStyle(
+                                        fontSize: 28,
+                                        color: Color(0xff6BB26B),
+                                      ),
+                                      textAlign: TextAlign.center,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 20),
+                                  const Divider(color: Colors.grey),
+                                  const SizedBox(height: 16),
+                                  const Text(
+                                    'The payment code will expire on:',
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      color: Colors.grey,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    state.expireDate,
+                                    style: const TextStyle(
+                                      fontSize: 16,
+                                      color: Colors.black,
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
-                          const SizedBox(height: 20),
-                          Text(
-                            'The payment code will expire on: ${state.expireDate}',
-                            style: const TextStyle(
-                              fontSize: 16,
-                              color: Colors.black,
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
+                          const SizedBox(height: 40),
                         ],
                       ),
                     );
