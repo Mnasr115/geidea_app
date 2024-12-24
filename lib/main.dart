@@ -73,6 +73,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Payment Failed!')),
       );
+      BlocProvider.of<PaymentMethodCubit>(context).resetPayment();
     }
   }
 
