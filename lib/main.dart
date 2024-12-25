@@ -9,7 +9,6 @@ import 'package:geideapay/common/geidea.dart';
 import 'package:geideapay/common/server_environments.dart';
 import 'package:geideapay/models/address.dart';
 import 'package:geideapay/widgets/checkout/checkout_options.dart';
-import 'package:webview_flutter/webview_flutter.dart';
 
 void main() {
   runApp(const MyApp());
@@ -280,10 +279,11 @@ class _PaymentScreenState extends State<PaymentScreen> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.center,
                                 children: [
-                                  const Icon(
-                                    Icons.check_circle,
-                                    color: Color(0xff6BB26B),
-                                    size: 48,
+                                  Image.asset(
+                                    'assets/images/fawry.png',
+                                    height: 60,
+                                    width: 180,
+                                    fit: BoxFit.cover,
                                   ),
                                   const SizedBox(height: 20),
                                   const Text(
@@ -315,13 +315,15 @@ class _PaymentScreenState extends State<PaymentScreen> {
                                     ),
                                   ),
                                   const SizedBox(height: 20),
-                                  const Divider(color: Colors.grey),
+                                  Divider(
+                                      color: Colors.grey.shade600
+                                          .withOpacity(0.9)),
                                   const SizedBox(height: 16),
-                                  const Text(
+                                  Text(
                                     'The payment code will expire on:',
                                     style: TextStyle(
                                       fontSize: 14,
-                                      color: Colors.grey,
+                                      color: Colors.black.withOpacity(0.7),
                                     ),
                                   ),
                                   const SizedBox(height: 8),
